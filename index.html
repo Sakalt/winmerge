@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Merge</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #gameCanvas { border: 1px solid black; }
+        #shop { position: fixed; top: 10px; right: 10px; }
+        #frames { position: fixed; top: 70px; right: 10px; display: flex; flex-wrap: wrap; width: 300px; }
+        .frame { border: 1px solid gray; width: 60px; height: 60px; margin: 5px; display: flex; align-items: center; justify-content: center; }
+        .frame img { max-width: 100%; max-height: 100%; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="shop">
+        <h3>Shop</h3>
+        <button id="buyWin">Winくんを購入（価格: <span id="price">100</span> コイン）</button>
+        <div id="coins">コイン: 0</div>
+        <div id="availableWins">利用可能: 0</div>
+    </div>
+    <div id="frames">
+        <!-- 12個の枠を用意 -->
+        ${Array.from({ length: 12 }).map((_, i) => `<div class="frame" id="frame${i}"></div>`).join('')}
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let coins = parseInt(localStorage.getItem('coins')) || 0;
+        let winKuns = JSON.parse(localStorage.getItem('winKuns')) || [];
+        let winPrice = parseInt(localStorage.getItem('winPrice')) || 100;
+        let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
+        let winKunsPower = {
+            '1.0': 10, '2.0': 20, '3.0': 30, '3.1': 40, '95': 50, 
+            '98': 60, 'me': 70, '2000': 80, 'xp': 90, 'longhorn': 100, 
+            'vista': 110, '7': 120, '8': 130, '8.1': 140, '10': 150, 
+            '11': 160, '12': 170, '13': 180, '14': 190, '15': 200
+        };
+        let winSize = 50;
+        let spawnInterval = 5000; // 5 seconds
+        let mergeDistance = 50; // Distance to consider merging
+        let coinGenerationInterval = 10000; // 10 seconds
+        let maxFrames = 12; // 最大枠数
+        let frames = Array.from({ length: maxFrames }).map(() => null); // 空枠の初期化
+
+        function drawFrames() {
+            frames.forEach((winK, index) => {
+                const frame = document.getElementById(`frame${index}`);
+                if (winK) {
+                    const img = new Image();
+                    img.src = winK.texture;
+                    img.onload = () => {
+                        frame.innerHTML = ''; // Clear previous image
+                        frame.appendChild(img);
+                    };
+                } else {
+                    frame.innerHTML = ''; // Clear frame if empty
+                }
+            });
+        }
+
+        function spawnWinKun() {
+            const texture = winKunsTextures[Math.floor(Math.random() * winKunsTextures.length)];
+            const image = new Image();
+            image.src = `images/${texture}.png`;
+            image.onload = () => {
+                const power = winKunsPower[texture] || 1; // Default power if texture not found
+
+                // Find an empty frame to place the new winKun
+                const emptyIndex = frames.indexOf(null);
+                if (emptyIndex !== -1) {
+                    frames[emptyIndex] = {
+                        x: Math.random() * (canvas.width - winSize),
+                        y: Math.random() * (canvas.height - winSize),
+                        image: image,
+                        power: power,
+                        texture: `images/${texture}.png`
+                    };
+                    localStorage.setItem('frames', JSON.stringify(frames));
+                    drawFrames();
+                }
+            };
+        }
+
+        function buyWinKun() {
+            if (coins >= winPrice) {
+                coins -= winPrice;
+                winPrice += 50; // Increase price for the next purchase
+                localStorage.setItem('coins', coins);
+                localStorage.setItem('winPrice', winPrice);
+                document.getElementById('price').innerText = winPrice;
+                updateAvailableWins();
+            }
+        }
+
+        function updateAvailableWins() {
+            // Determine available WinKuns based on discovered textures
+            let discoveredTextures = winKuns.map(winK => winK.texture);
+            let availableTextureIndex = winKunsTextures.indexOf(discoveredTextures[discoveredTextures.length - 1]) - 4;
+
+            if (availableTextureIndex < 0) {
+                availableTextureIndex = 0;
+            }
+
+            let availableTextures = winKunsTextures.slice(availableTextureIndex, availableTextureIndex + 4);
+
+            document.getElementById('availableWins').innerText = `利用可能: ${availableTextures.join(', ')}`;
+        }
+
+        function checkMerge() {
+            for (let i = 0; i < frames.length; i++) {
+                if (frames[i]) {
+                    for (let j = i + 1; j < frames.length; j++) {
+                        if (frames[j]) {
+                            const winK1 = frames[i];
+                            const winK2 = frames[j];
+                            const distance = Math.hypot(winK1.x - winK2.x, winK1.y - winK2.y);
+                            if (distance < mergeDistance) {
+                                mergeWinKuns(i, j);
+                                i--; // Recheck from start
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function mergeWinKuns(index1, index2) {
+            const winK1 = frames[index1];
+            const winK2 = frames[index2];
+            const newPower = winK1.power + winK2.power;
+            const newTextureIndex = Math.floor((winKunsTextures.indexOf(winK1.texture) + winKunsTextures.indexOf(winK2.texture)) / 2);
+            const newTexture = winKunsTextures[Math.min(newTextureIndex, winKunsTextures.length - 1)];
+            const newImage = new Image();
+            newImage.src = `images/${newTexture}.png`;
+
+            newImage.onload = () => {
+                frames[index1] = {
+                    x: (winK1.x + winK2.x) / 2,
+                    y: (winK1.y + winK2.y) / 2,
+                    image: newImage,
+                    power: newPower,
+                    texture: `images/${newTexture}.png`
+                };
+                frames[index2] = null;
+                localStorage.setItem('frames', JSON.stringify(frames));
+                drawFrames();
+            };
+        }
+
+        function generateCoins() {
+            let totalPower = 0;
+            frames.forEach(winK => {
+                if (winK) {
+                    totalPower += winK.power;
+                }
+            });
+            coins += totalPower * 0.1; // Generate coins based on total power of all winKuns
+            localStorage.setItem('coins', coins);
+            document.getElementById('coins').innerText = `コイン: ${Math.floor(coins)}`;
+        }
+
+        function update() {
+            checkMerge();
+            generateCoins();
+            drawFrames();
+        }
+
+        document.getElementById('buyWin').addEventListener('click', buyWinKun);
+
+        // Initialize frames
+        const savedFrames = JSON.parse(localStorage.getItem('frames')) || Array.from({ length: maxFrames }).map(() => null);
+        frames = savedFrames;
+        drawFrames();
+        
+        // Start game loops
+        setInterval(spawnWinKun, spawnInterval);
+        setInterval(update, 100); // Update every 100ms
+        setInterval(generateCoins, coinGenerationInterval); // Generate coins every 10 seconds
+    </script>
+</body>
+</html>
