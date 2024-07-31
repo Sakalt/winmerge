@@ -22,8 +22,19 @@
         <div id="availableWins">利用可能: 0</div>
     </div>
     <div id="frames">
-        <!-- 12個の枠を用意 -->
-        ${Array.from({ length: 12 }).map((_, i) => `<div class="frame" id="frame${i}"></div>`).join('')}
+        <!-- 12個の枠をHTML内で静的に定義 -->
+        <div class="frame" id="frame0"></div>
+        <div class="frame" id="frame1"></div>
+        <div class="frame" id="frame2"></div>
+        <div class="frame" id="frame3"></div>
+        <div class="frame" id="frame4"></div>
+        <div class="frame" id="frame5"></div>
+        <div class="frame" id="frame6"></div>
+        <div class="frame" id="frame7"></div>
+        <div class="frame" id="frame8"></div>
+        <div class="frame" id="frame9"></div>
+        <div class="frame" id="frame10"></div>
+        <div class="frame" id="frame11"></div>
     </div>
 
     <script>
