@@ -144,31 +144,35 @@
         function mergeWinKuns(frameIndex1, frameIndex2) {
             const winK1 = frames[frameIndex1];
             const winK2 = frames[frameIndex2];
-            const textureIndex1 = winKunsTextures.indexOf(winK1?.texture?.split('/').pop().split('.')[0]);
-            const textureIndex2 = winKunsTextures.indexOf(winK2?.texture?.split('/').pop().split('.')[0]);
 
             if (winK1 && winK2 && winK1.texture === winK2.texture) {
-                const nextIndex = Math.min(textureIndex1 + 1, winKunsTextures.length - 1);
-                const newTexture = winKunsTextures[nextIndex];
-                const newImage = new Image();
-                newImage.src = `images/${newTexture}.png`;
+                const textureIndex = winKunsTextures.indexOf(winK1.texture.split('/').pop().split('.')[0]);
+                const nextIndex = textureIndex + 1;
 
-                newImage.onload = () => {
-                    frames[frameIndex1] = {
-                        x: (winK1.x + winK2.x) / 2,
-                        y: (winK1.y + winK2.y) / 2,
-                        image: newImage,
-                        power: winK1.power + winK2.power,
-                        texture: `images/${newTexture}.png`
+                if (nextIndex < winKunsTextures.length) {
+                    const newTexture = winKunsTextures[nextIndex];
+                    const newImage = new Image();
+                    newImage.src = `images/${newTexture}.png`;
+
+                    newImage.onload = () => {
+                        frames[frameIndex1] = {
+                            x: (winK1.x + winK2.x) / 2,
+                            y: (winK1.y + winK2.y) / 2,
+                            image: newImage,
+                            power: winK1.power + winK2.power,
+                            texture: `images/${newTexture}.png`
+                        };
+                        frames[frameIndex2] = null;
+                        if (!discoveredTextures.includes(newTexture)) {
+                            discoveredTextures.push(newTexture);
+                            localStorage.setItem('discoveredTextures', JSON.stringify(discoveredTextures));
+                        }
+                        localStorage.setItem('frames', JSON.stringify(frames));
+                        drawFrames();
                     };
-                    frames[frameIndex2] = null;
-                    if (!discoveredTextures.includes(newTexture)) {
-                        discoveredTextures.push(newTexture);
-                        localStorage.setItem('discoveredTextures', JSON.stringify(discoveredTextures));
-                    }
-                    localStorage.setItem('frames', JSON.stringify(frames));
-                    drawFrames();
-                };
+                } else {
+                    alert('これ以上アップグレードできません。');
+                }
             } else {
                 alert('選択されたWinくんは同じ種類ではありません。');
             }
