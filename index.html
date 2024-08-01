@@ -20,21 +20,22 @@
         <button id="buyWin">Winくんを購入（価格: <span id="price">100</span> コイン）</button>
         <div id="coins">コイン: 0</div>
         <div id="availableWins">利用可能: 0</div>
+        <button id="mergeWin">マージ</button>
     </div>
     <div id="frames">
         <!-- 12個の枠をHTML内で静的に定義 -->
-        <div class="frame" id="frame0"></div>
-        <div class="frame" id="frame1"></div>
-        <div class="frame" id="frame2"></div>
-        <div class="frame" id="frame3"></div>
-        <div class="frame" id="frame4"></div>
-        <div class="frame" id="frame5"></div>
-        <div class="frame" id="frame6"></div>
-        <div class="frame" id="frame7"></div>
-        <div class="frame" id="frame8"></div>
-        <div class="frame" id="frame9"></div>
-        <div class="frame" id="frame10"></div>
-        <div class="frame" id="frame11"></div>
+        <div class="frame" id="frame0" onclick="showWinKunInfo(0)"></div>
+        <div class="frame" id="frame1" onclick="showWinKunInfo(1)"></div>
+        <div class="frame" id="frame2" onclick="showWinKunInfo(2)"></div>
+        <div class="frame" id="frame3" onclick="showWinKunInfo(3)"></div>
+        <div class="frame" id="frame4" onclick="showWinKunInfo(4)"></div>
+        <div class="frame" id="frame5" onclick="showWinKunInfo(5)"></div>
+        <div class="frame" id="frame6" onclick="showWinKunInfo(6)"></div>
+        <div class="frame" id="frame7" onclick="showWinKunInfo(7)"></div>
+        <div class="frame" id="frame8" onclick="showWinKunInfo(8)"></div>
+        <div class="frame" id="frame9" onclick="showWinKunInfo(9)"></div>
+        <div class="frame" id="frame10" onclick="showWinKunInfo(10)"></div>
+        <div class="frame" id="frame11" onclick="showWinKunInfo(11)"></div>
     </div>
 
     <script>
@@ -44,21 +45,19 @@
         canvas.height = window.innerHeight;
 
         let coins = parseInt(localStorage.getItem('coins')) || 0;
-        let winKuns = JSON.parse(localStorage.getItem('winKuns')) || [];
+        let frames = JSON.parse(localStorage.getItem('frames')) || Array.from({ length: 12 }).map(() => null);
         let winPrice = parseInt(localStorage.getItem('winPrice')) || 100;
         let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
+        let discoveredTextures = JSON.parse(localStorage.getItem('discoveredTextures')) || ['1.0', '2.0'];
         let winKunsPower = {
-            '1.0': 6, '2.0': 15, '3.0': 22, '3.1': 26, '95': 34, 
-            '98': 35, 'me': 38, '2000': 40, 'xp': 49, 'longhorn': 60, 
-            'vista': 62, '7': 79, '8': 81, '8.1': 86, '10': 100, 
-            '11': 122, '12': 129, '13': 136, '14': 155, '15': 171
+            '1.0': 6, '2.0': 9, '3.0': 15, '3.1': 26, '95': 30, 
+            '98': 33, 'me': 36, '2000': 45, 'xp': 60, 'longhorn': 62, 
+            'vista': 65, '7': 70, '8': 78, '8.1': 82, '10': 100, 
+            '11': 106, '12': 112, '13': 124, '14': 140, '15': 200
         };
         let winSize = 50;
         let spawnInterval = 5000; // 5 seconds
-        let mergeDistance = 50; // Distance to consider merging
         let coinGenerationInterval = 10000; // 10 seconds
-        let maxFrames = 12; // 最大枠数
-        let frames = Array.from({ length: maxFrames }).map(() => null); // 空枠の初期化
 
         function drawFrames() {
             frames.forEach((winK, index) => {
@@ -77,7 +76,7 @@
         }
 
         function spawnWinKun() {
-            const texture = winKunsTextures[Math.floor(Math.random() * winKunsTextures.length)];
+            const texture = winKunsTextures[Math.floor(Math.random() * 2)]; // Only '1.0' and '2.0'
             const image = new Image();
             image.src = `images/${texture}.png`;
             image.onload = () => {
@@ -111,59 +110,56 @@
         }
 
         function updateAvailableWins() {
-            // Determine available WinKuns based on discovered textures
-            let discoveredTextures = winKuns.map(winK => winK.texture);
-            let availableTextureIndex = winKunsTextures.indexOf(discoveredTextures[discoveredTextures.length - 1]) - 4;
-
-            if (availableTextureIndex < 0) {
-                availableTextureIndex = 0;
-            }
-
-            let availableTextures = winKunsTextures.slice(availableTextureIndex, availableTextureIndex + 4);
-
-            document.getElementById('availableWins').innerText = `利用可能: ${availableTextures.join(', ')}`;
+            document.getElementById('availableWins').innerText = `利用可能: ${discoveredTextures.join(', ')}`;
         }
 
-        function checkMerge() {
-            for (let i = 0; i < frames.length; i++) {
-                if (frames[i]) {
-                    for (let j = i + 1; j < frames.length; j++) {
-                        if (frames[j]) {
-                            const winK1 = frames[i];
-                            const winK2 = frames[j];
-                            const distance = Math.hypot(winK1.x - winK2.x, winK1.y - winK2.y);
-                            if (distance < mergeDistance) {
-                                mergeWinKuns(i, j);
-                                i--; // Recheck from start
-                                break;
-                            }
-                        }
+        function showWinKunInfo(frameIndex) {
+            const winK = frames[frameIndex];
+            if (winK) {
+                alert(`Frame ${frameIndex}: ${winK.texture}`);
+            } else {
+                alert(`Frame ${frameIndex} is empty`);
+            }
+        }
+
+        function mergeWinKuns(frameIndex1, frameIndex2) {
+            const winK1 = frames[frameIndex1];
+            const winK2 = frames[frameIndex2];
+            if (winK1 && winK2 && winK1.texture === winK2.texture) {
+                const newTextureIndex = Math.min(winKunsTextures.indexOf(winK1.texture) + 1, winKunsTextures.length - 1);
+                const newTexture = winKunsTextures[newTextureIndex];
+                const newImage = new Image();
+                newImage.src = `images/${newTexture}.png`;
+
+                newImage.onload = () => {
+                    frames[frameIndex1] = {
+                        x: (winK1.x + winK2.x) / 2,
+                        y: (winK1.y + winK2.y) / 2,
+                        image: newImage,
+                        power: winK1.power + winK2.power,
+                        texture: `images/${newTexture}.png`
+                    };
+                    frames[frameIndex2] = null;
+                    if (!discoveredTextures.includes(newTexture)) {
+                        discoveredTextures.push(newTexture);
+                        localStorage.setItem('discoveredTextures', JSON.stringify(discoveredTextures));
                     }
-                }
+                    localStorage.setItem('frames', JSON.stringify(frames));
+                    drawFrames();
+                };
+            } else {
+                alert('選択されたWinくんは同じ種類ではありません。');
             }
         }
 
-        function mergeWinKuns(index1, index2) {
-            const winK1 = frames[index1];
-            const winK2 = frames[index2];
-            const newPower = winK1.power + winK2.power;
-            const newTextureIndex = Math.floor((winKunsTextures.indexOf(winK1.texture) + winKunsTextures.indexOf(winK2.texture)) / 2);
-            const newTexture = winKunsTextures[Math.min(newTextureIndex, winKunsTextures.length - 1)];
-            const newImage = new Image();
-            newImage.src = `images/${newTexture}.png`;
-
-            newImage.onload = () => {
-                frames[index1] = {
-                    x: (winK1.x + winK2.x) / 2,
-                    y: (winK1.y + winK2.y) / 2,
-                    image: newImage,
-                    power: newPower,
-                    texture: `images/${newTexture}.png`
-                };
-                frames[index2] = null;
-                localStorage.setItem('frames', JSON.stringify(frames));
-                drawFrames();
-            };
+        function promptForMerge() {
+            const frameIndex1 = parseInt(prompt('最初のフレーム番号を入力してください (0-11):'));
+            const frameIndex2 = parseInt(prompt('次のフレーム番号を入力してください (0-11):'));
+            if (isNaN(frameIndex1) || isNaN(frameIndex2) || frameIndex1 < 0 || frameIndex1 >= frames.length || frameIndex2 < 0 || frameIndex2 >= frames.length) {
+                alert('無効なフレーム番号です。');
+            } else {
+                mergeWinKuns(frameIndex1, frameIndex2);
+            }
         }
 
         function generateCoins() {
@@ -179,17 +175,16 @@
         }
 
         function update() {
-            checkMerge();
             generateCoins();
             drawFrames();
         }
 
         document.getElementById('buyWin').addEventListener('click', buyWinKun);
+        document.getElementById('mergeWin').addEventListener('click', promptForMerge);
 
         // Initialize frames
-        const savedFrames = JSON.parse(localStorage.getItem('frames')) || Array.from({ length: maxFrames }).map(() => null);
-        frames = savedFrames;
         drawFrames();
+        updateAvailableWins();
         
         // Start game loops
         setInterval(spawnWinKun, spawnInterval);
