@@ -95,8 +95,8 @@
         }
 
         function spawnWinKun() {
-            // Only '1.0' or '2.0' can be spawned
-            const texture = ['1.0', '2.0'][Math.floor(Math.random() * 2)];
+            const availableTextures = winKunsTextures.filter(texture => discoveredTextures.includes(texture) || texture === '1.0' || texture === '2.0');
+            const texture = availableTextures[Math.floor(Math.random() * availableTextures.length)];
             const image = new Image();
             image.src = `images/${texture}.png`;
             image.onload = () => {
@@ -125,6 +125,20 @@
                 localStorage.setItem('coins', coins);
                 localStorage.setItem('winPrice', winPrice);
                 document.getElementById('price').innerText = winPrice;
+
+                // Update discovered textures
+                let newDiscoveredTexture = null;
+                for (let i = 0; i < winKunsTextures.length; i++) {
+                    if (!discoveredTextures.includes(winKunsTextures[i]) && (i === 0 || discoveredTextures.includes(winKunsTextures[i - 1]))) {
+                        newDiscoveredTexture = winKunsTextures[i];
+                        break;
+                    }
+                }
+                if (newDiscoveredTexture) {
+                    discoveredTextures.push(newDiscoveredTexture);
+                    localStorage.setItem('discoveredTextures', JSON.stringify(discoveredTextures));
+                }
+
                 updateAvailableWins();
             }
         }
