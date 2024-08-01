@@ -37,10 +37,9 @@
         <h3>Shop</h3>
         <button id="buyWin">Winくんを購入（価格: <span id="price">100</span> コイン）</button>
         <button id="mergeWin">マージ</button>
+        <button id="deleteWin">Winくん削除</button>
         <button id="resetGame">リセット</button>
-        <button id="deleteWin">Winくんを削除</button>
         <div id="coins">コイン: 0</div>
-        <div id="shopWin">ショップ: </div>
     </div>
     <div id="frames">
         <!-- 12個の枠をHTML内で静的に定義 -->
@@ -67,13 +66,13 @@
         let coins = parseInt(localStorage.getItem('coins')) || 0;
         let frames = JSON.parse(localStorage.getItem('frames')) || Array.from({ length: 12 }).map(() => null);
         let winPrice = parseInt(localStorage.getItem('winPrice')) || 100;
-        let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
-        let discoveredTextures = JSON.parse(localStorage.getItem('discoveredTextures')) || ['1.0', '2.0'];
+        let winKunsTextures = ['1.0', '2.0', '3.0', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
         let winKunsPower = {
-            '1.0': 10, '2.0': 20, '3.0': 30, '3.1': 40, '95': 50, 
-            '98': 60, 'me': 70, '2000': 80, 'xp': 90, 'longhorn': 100, 
-            'vista': 110, '7': 120, '8': 130, '8.1': 140, '10': 150, 
-            '11': 160, '12': 170, '13': 180, '14': 190, '15': 200
+            '1.0': 8, '2.0': 16, '3.0': 24, '95': 40, 
+            '98': 48, 'me': 56, '2000': 64, 'xp': 72, 
+            'longhorn': 80, 'vista': 88, '7': 96, '8': 104, 
+            '8.1': 112, '10': 120, '11': 128, '12': 136, 
+            '13': 144, '14': 152, '15': 160
         };
         let winSize = 60;
         let spawnInterval = 5000; // 5 seconds
@@ -96,12 +95,12 @@
         }
 
         function spawnWinKun() {
-            // Choose from all discovered textures
-            const randomTexture = winKunsTextures[Math.floor(Math.random() * discoveredTextures.length)];
+            // ランダムに '1.0' か '2.0' を選ぶ
+            const texture = ['1.0', '2.0'][Math.floor(Math.random() * 2)];
             const image = new Image();
-            image.src = `images/${randomTexture}.png`;
+            image.src = `images/${texture}.png`;
             image.onload = () => {
-                const power = winKunsPower[randomTexture] * (0.6 + Math.random() * 1.0); // Apply random multiplier
+                const power = winKunsPower[texture] || 1; // Default power if texture not found
 
                 // Find an empty frame to place the new winKun
                 const emptyIndex = frames.indexOf(null);
@@ -111,7 +110,7 @@
                         y: Math.random() * (canvas.height - winSize),
                         image: image,
                         power: power,
-                        texture: `images/${randomTexture}.png`
+                        texture: `images/${texture}.png`
                     };
                     localStorage.setItem('frames', JSON.stringify(frames));
                     drawFrames();
@@ -131,9 +130,9 @@
         }
 
         function updateShop() {
-            const availableWinKuns = winKunsTextures.filter(texture => !frames.some(frame => frame && frame.texture === `images/${texture}.png`));
-            const randomWinKun = availableWinKuns[Math.floor(Math.random() * availableWinKuns.length)];
-            document.getElementById('shopWin').innerText = `ショップ: ${randomWinKun}`;
+            // ランダムな Winくんをショップに表示
+            const randomTexture = winKunsTextures[Math.floor(Math.random() * winKunsTextures.length)];
+            document.getElementById('availableWins').innerText = `利用可能: ${randomTexture}`;
         }
 
         function showWinKunInfo(frameIndex) {
@@ -150,6 +149,7 @@
             const winK2 = frames[frameIndex2];
 
             if (winK1 && winK2 && winK1.texture === winK2.texture) {
+                // テクスチャ名からインデックスを取得
                 const textureIndex = winKunsTextures.indexOf(winK1.texture.split('/').pop().split('.')[0]);
                 const nextIndex = textureIndex + 1;
 
@@ -167,10 +167,7 @@
                             texture: `images/${newTexture}.png`
                         };
                         frames[frameIndex2] = null;
-                        if (!discoveredTextures.includes(newTexture)) {
-                            discoveredTextures.push(newTexture);
-                            localStorage.setItem('discoveredTextures', JSON.stringify(discoveredTextures));
-                        }
+
                         localStorage.setItem('frames', JSON.stringify(frames));
                         drawFrames();
                     };
@@ -185,29 +182,55 @@
         function promptForMerge() {
             const frameIndex1 = parseInt(prompt('最初のフレーム番号を入力してください (0-11):'));
             const frameIndex2 = parseInt(prompt('次のフレーム番号を入力してください (0-11):'));
-
-            if (frameIndex1 >= 0 && frameIndex1 < 12 && frameIndex2 >= 0 && frameIndex2 < 12) {
-                mergeWinKuns(frameIndex1, frameIndex2);
-            } else {
+            if (isNaN(frameIndex1) || isNaN(frameIndex2) || frameIndex1 < 0 || frameIndex1 >= frames.length || frameIndex2 < 0 || frameIndex2 >= frames.length) {
                 alert('無効なフレーム番号です。');
+            } else {
+                mergeWinKuns(frameIndex1, frameIndex2);
             }
         }
 
         function deleteWinKun() {
             const frameIndex = parseInt(prompt('削除するフレーム番号を入力してください (0-11):'));
-
-            if (frameIndex >= 0 && frameIndex < 12) {
+            if (isNaN(frameIndex) || frameIndex < 0 || frameIndex >= frames.length || frames[frameIndex] === null) {
+                alert('無効なフレーム番号です。');
+            } else {
                 frames[frameIndex] = null;
                 localStorage.setItem('frames', JSON.stringify(frames));
                 drawFrames();
-            } else {
-                alert('無効なフレーム番号です。');
             }
         }
 
         function resetGame() {
-            localStorage.clear();
-            location.reload();
+            if (confirm('ゲームをリセットしますか？')) {
+                coins = 0;
+                frames = Array.from({ length: 12 }).map(() => null);
+                winPrice = 100;
+                localStorage.clear();
+                localStorage.setItem('coins', coins);
+                localStorage.setItem('frames', JSON.stringify(frames));
+                localStorage.setItem('winPrice', winPrice);
+                document.getElementById('coins').innerText = `コイン: ${coins}`;
+                document.getElementById('price').innerText = winPrice;
+                updateShop();
+                drawFrames();
+            }
+        }
+
+        function generateCoins() {
+            let totalPower = 0;
+            frames.forEach(winK => {
+                if (winK) {
+                    totalPower += winK.power;
+                }
+            });
+            coins += totalPower * 0.1; // Generate coins based on total power of all winKuns
+            localStorage.setItem('coins', coins);
+            document.getElementById('coins').innerText = `コイン: ${Math.floor(coins)}`;
+        }
+
+        function update() {
+            generateCoins();
+            drawFrames();
         }
 
         document.getElementById('buyWin').addEventListener('click', buyWinKun);
@@ -215,19 +238,15 @@
         document.getElementById('deleteWin').addEventListener('click', deleteWinKun);
         document.getElementById('resetGame').addEventListener('click', resetGame);
 
-        function generateCoins() {
-            coins += 10;
-            localStorage.setItem('coins', coins);
-            document.getElementById('coins').innerText = `コイン: ${coins}`;
-        }
-
-        // Start intervals
-        setInterval(spawnWinKun, spawnInterval);
-        setInterval(generateCoins, coinGenerationInterval);
-
-        // Initial setup
-        updateShop();
+        // Initialize frames
         drawFrames();
+        updateShop();
+
+        // Spawn Winくん at intervals
+        setInterval(spawnWinKun, spawnInterval);
+
+        // Generate coins at intervals
+        setInterval(update, coinGenerationInterval);
     </script>
 </body>
 </html>
