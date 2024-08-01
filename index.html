@@ -69,10 +69,10 @@
         let winPrice = parseInt(localStorage.getItem('winPrice')) || 100;
         let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
         let winKunsPower = {
-            '1.0': 8, '2.0': 16, '3.0': 24, '3.1': 32, '95': 40, 
-            '98': 48, 'me': 56, '2000': 64, 'xp': 72, 'longhorn': 80, 
-            'vista': 88, '7': 96, '8': 104, '8.1': 112, '10': 120, 
-            '11': 128, '12': 136, '13': 144, '14': 152, '15': 160
+            '1.0': 10, '2.0': 20, '3.0': 30, '3.1': 40, '95': 50, 
+            '98': 60, 'me': 70, '2000': 80, 'xp': 90, 'longhorn': 100, 
+            'vista': 110, '7': 120, '8': 130, '8.1': 140, '10': 150, 
+            '11': 160, '12': 170, '13': 180, '14': 190, '15': 200
         };
         let winSize = 60;
         let spawnInterval = 3000; // 3 seconds for spawning Winくん
@@ -99,7 +99,7 @@
             const image = new Image();
             image.src = `images/${texture}.png`;
             image.onload = () => {
-                const power = winKunsPower[texture] || 1;
+                const power = winKunsPower[texture] || 10;
 
                 // Find an empty frame to place the new winKun
                 const emptyIndex = frames.indexOf(null);
@@ -137,7 +137,7 @@
         function showWinKunInfo(frameIndex) {
             const winK = frames[frameIndex];
             if (winK) {
-                alert(`Frame ${frameIndex}: ${winK.texture}`);
+                alert(`Frame ${frameIndex}: ${winK.texture} (Power: ${winK.power})`);
             } else {
                 alert(`Frame ${frameIndex} is empty`);
             }
@@ -147,32 +147,38 @@
             const winK1 = frames[frameIndex1];
             const winK2 = frames[frameIndex2];
 
-            if (winK1 && winK2 && winK1.texture === winK2.texture) {
-                const textureIndex = winKunsTextures.indexOf(winK1.texture.split('/').pop().split('.')[0]);
-                const nextIndex = textureIndex + 1;
+            if (winK1 && winK2) {
+                alert(`マージする Winくん の情報:\nFrame ${frameIndex1}: ${winK1.texture} (Power: ${winK1.power})\nFrame ${frameIndex2}: ${winK2.texture} (Power: ${winK2.power})`);
 
-                if (nextIndex < winKunsTextures.length) {
-                    const newTexture = winKunsTextures[nextIndex];
-                    const newImage = new Image();
-                    newImage.src = `images/${newTexture}.png`;
+                if (winK1.texture === winK2.texture) {
+                    const textureIndex = winKunsTextures.indexOf(winK1.texture.split('/').pop().split('.')[0]);
+                    const nextIndex = textureIndex + 1;
 
-                    newImage.onload = () => {
-                        frames[frameIndex1] = {
-                            x: (winK1.x + winK2.x) / 2,
-                            y: (winK1.y + winK2.y) / 2,
-                            image: newImage,
-                            power: winK1.power + winK2.power,
-                            texture: `images/${newTexture}.png`
+                    if (nextIndex < winKunsTextures.length) {
+                        const newTexture = winKunsTextures[nextIndex];
+                        const newImage = new Image();
+                        newImage.src = `images/${newTexture}.png`;
+
+                        newImage.onload = () => {
+                            frames[frameIndex1] = {
+                                x: (winK1.x + winK2.x) / 2,
+                                y: (winK1.y + winK2.y) / 2,
+                                image: newImage,
+                                power: winK1.power + winK2.power,
+                                texture: `images/${newTexture}.png`
+                            };
+                            frames[frameIndex2] = null;
+                            localStorage.setItem('frames', JSON.stringify(frames));
+                            drawFrames();
                         };
-                        frames[frameIndex2] = null;
-                        localStorage.setItem('frames', JSON.stringify(frames));
-                        drawFrames();
-                    };
+                    } else {
+                        alert('これ以上アップグレードできません。');
+                    }
                 } else {
-                    alert('これ以上アップグレードできません。');
+                    alert('選択されたWinくんはマージできません。');
                 }
             } else {
-                alert('選択された Winくん はマージできません。');
+                alert('選択されたWinくんが存在しません。');
             }
         }
 
@@ -187,46 +193,43 @@
                 coins = 0;
                 winPrice = 100;
                 frames = Array.from({ length: 12 }).map(() => null);
-                localStorage.removeItem('coins');
-                localStorage.removeItem('frames');
-                localStorage.removeItem('winPrice');
-                document.getElementById('coins').innerText = `コイン: ${coins}`;
-                document.getElementById('price').innerText = winPrice;
+                localStorage.setItem('coins', coins);
+                localStorage.setItem('winPrice', winPrice);
+                localStorage.setItem('frames', JSON.stringify(frames));
                 drawFrames();
+                updateShop();
             }
-        }
-
-        function generateCoins() {
-            frames.forEach(winK => {
-                if (winK) {
-                    coins += winK.power * 0.1; // Generate coins based on the power of Winくん
-                }
-            });
-            localStorage.setItem('coins', coins);
-            document.getElementById('coins').innerText = `コイン: ${Math.floor(coins)}`;
         }
 
         document.getElementById('buyWin').addEventListener('click', buyWinKun);
         document.getElementById('mergeWin').addEventListener('click', () => {
-            const frameIndex1 = parseInt(prompt('マージする Winくん のフレーム番号1を入力してください:'));
-            const frameIndex2 = parseInt(prompt('マージする Winくん のフレーム番号2を入力してください:'));
-            mergeWinKuns(frameIndex1, frameIndex2);
+            const frameIndex1 = parseInt(prompt('マージする Winくん のFrame Index 1を入力してください (0-11):'));
+            const frameIndex2 = parseInt(prompt('マージする Winくん のFrame Index 2を入力してください (0-11):'));
+            if (!isNaN(frameIndex1) && !isNaN(frameIndex2) && frameIndex1 >= 0 && frameIndex1 < 12 && frameIndex2 >= 0 && frameIndex2 < 12) {
+                mergeWinKuns(frameIndex1, frameIndex2);
+            } else {
+                alert('無効なフレームインデックスです。');
+            }
         });
         document.getElementById('deleteWin').addEventListener('click', () => {
-            const frameIndex = parseInt(prompt('削除する Winくん のフレーム番号を入力してください:'));
-            deleteWinKun(frameIndex);
+            const frameIndex = parseInt(prompt('削除する Winくん のFrame Indexを入力してください (0-11):'));
+            if (!isNaN(frameIndex) && frameIndex >= 0 && frameIndex < 12) {
+                deleteWinKun(frameIndex);
+            } else {
+                alert('無効なフレームインデックスです。');
+            }
         });
         document.getElementById('resetGame').addEventListener('click', resetGame);
 
-        // Initialize frames
+        setInterval(spawnWinKun, spawnInterval);
+        setInterval(() => {
+            coins += 10;
+            localStorage.setItem('coins', coins);
+            document.getElementById('coins').innerText = `コイン: ${coins}`;
+        }, coinGenerationInterval);
+
         drawFrames();
         updateShop();
-
-        // Spawn Winくん at intervals
-        setInterval(spawnWinKun, spawnInterval);
-
-        // Generate coins at intervals
-        setInterval(generateCoins, coinGenerationInterval);
     </script>
 </body>
 </html>
