@@ -67,17 +67,16 @@
         let coins = parseInt(localStorage.getItem('coins')) || 0;
         let frames = JSON.parse(localStorage.getItem('frames')) || Array.from({ length: 12 }).map(() => null);
         let winPrice = parseInt(localStorage.getItem('winPrice')) || 100;
-        let winKunsTextures = ['1.0', '2.0', '3.0', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
+        let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
         let winKunsPower = {
-            '1.0': 8, '2.0': 16, '3.0': 24, '95': 40, 
-            '98': 48, 'me': 56, '2000': 64, 'xp': 72, 
-            'longhorn': 80, 'vista': 88, '7': 96, '8': 104, 
-            '8.1': 112, '10': 120, '11': 128, '12': 136, 
-            '13': 144, '14': 152, '15': 160
+            '1.0': 8, '2.0': 16, '3.0': 24, '3.1': 32, '95': 40, 
+            '98': 48, 'me': 56, '2000': 64, 'xp': 72, 'longhorn': 80, 
+            'vista': 88, '7': 96, '8': 104, '8.1': 112, '10': 120, 
+            '11': 128, '12': 136, '13': 144, '14': 152, '15': 160
         };
         let winSize = 60;
-        let spawnInterval = 5000; // 5 seconds
-        let coinGenerationInterval = 10000; // 10 seconds
+        let spawnInterval = 3000; // 3 seconds for spawning Winくん
+        let coinGenerationInterval = 10000; // 10 seconds for general coin generation
 
         function drawFrames() {
             frames.forEach((winK, index) => {
@@ -96,7 +95,7 @@
         }
 
         function spawnWinKun() {
-            const texture = winKunsTextures[Math.floor(Math.random() * 2)]; // Only '1.0' and '2.0'
+            const texture = winKunsTextures[Math.floor(Math.random() * winKunsTextures.length)];
             const image = new Image();
             image.src = `images/${texture}.png`;
             image.onload = () => {
@@ -130,6 +129,7 @@
         }
 
         function updateShop() {
+            // Randomly update available wins in the shop (for demonstration purposes)
             const randomTexture = winKunsTextures[Math.floor(Math.random() * winKunsTextures.length)];
             document.getElementById('availableWins').innerText = `利用可能: ${randomTexture}`;
         }
@@ -184,33 +184,48 @@
 
         function resetGame() {
             if (confirm('本当にゲームをリセットしますか？')) {
+                coins = 0;
+                winPrice = 100;
+                frames = Array.from({ length: 12 }).map(() => null);
                 localStorage.removeItem('coins');
                 localStorage.removeItem('frames');
                 localStorage.removeItem('winPrice');
-                location.reload();
+                document.getElementById('coins').innerText = `コイン: ${coins}`;
+                document.getElementById('price').innerText = winPrice;
+                drawFrames();
             }
         }
 
         function generateCoins() {
-            let totalPower = 0;
             frames.forEach(winK => {
                 if (winK) {
-                    totalPower += winK.power;
+                    coins += winK.power * 0.1; // Generate coins based on the power of Winくん
                 }
             });
-            coins += totalPower * 0.1; // Generate coins based on total power of all winKuns
             localStorage.setItem('coins', coins);
             document.getElementById('coins').innerText = `コイン: ${Math.floor(coins)}`;
         }
 
         document.getElementById('buyWin').addEventListener('click', buyWinKun);
-        document.getElementById('mergeWin').addEventListener('click', () => mergeWinKuns(0, 1)); // Example usage
-        document.getElementById('deleteWin').addEventListener('click', () => deleteWinKun(0)); // Example usage
+        document.getElementById('mergeWin').addEventListener('click', () => {
+            const frameIndex1 = parseInt(prompt('マージする Winくん のフレーム番号1を入力してください:'));
+            const frameIndex2 = parseInt(prompt('マージする Winくん のフレーム番号2を入力してください:'));
+            mergeWinKuns(frameIndex1, frameIndex2);
+        });
+        document.getElementById('deleteWin').addEventListener('click', () => {
+            const frameIndex = parseInt(prompt('削除する Winくん のフレーム番号を入力してください:'));
+            deleteWinKun(frameIndex);
+        });
         document.getElementById('resetGame').addEventListener('click', resetGame);
 
-        updateShop();
+        // Initialize frames
         drawFrames();
+        updateShop();
+
+        // Spawn Winくん at intervals
         setInterval(spawnWinKun, spawnInterval);
+
+        // Generate coins at intervals
         setInterval(generateCoins, coinGenerationInterval);
     </script>
 </body>
