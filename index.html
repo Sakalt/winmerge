@@ -8,9 +8,27 @@
         body { margin: 0; overflow: hidden; }
         #gameCanvas { border: 1px solid black; }
         #shop { position: fixed; top: 10px; right: 10px; }
-        #frames { position: fixed; top: 70px; right: 10px; display: flex; flex-wrap: wrap; width: 300px; }
-        .frame { border: 1px solid gray; width: 60px; height: 60px; margin: 5px; display: flex; align-items: center; justify-content: center; }
+        #frames { 
+            position: fixed; 
+            bottom: 10px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            display: flex; 
+            flex-wrap: wrap; 
+            width: 780px; 
+            justify-content: center; 
+        }
+        .frame { 
+            border: 1px solid gray; 
+            width: 60px; 
+            height: 60px; 
+            margin: 5px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
         .frame img { max-width: 100%; max-height: 100%; }
+        button { margin: 5px; }
     </style>
 </head>
 <body>
@@ -18,9 +36,10 @@
     <div id="shop">
         <h3>Shop</h3>
         <button id="buyWin">Winくんを購入（価格: <span id="price">100</span> コイン）</button>
+        <button id="mergeWin">マージ</button>
+        <button id="resetGame">リセット</button>
         <div id="coins">コイン: 0</div>
         <div id="availableWins">利用可能: 0</div>
-        <button id="mergeWin">マージ</button>
     </div>
     <div id="frames">
         <!-- 12個の枠をHTML内で静的に定義 -->
@@ -50,10 +69,10 @@
         let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
         let discoveredTextures = JSON.parse(localStorage.getItem('discoveredTextures')) || ['1.0', '2.0'];
         let winKunsPower = {
-            '1.0': 6, '2.0': 9, '3.0': 15, '3.1': 26, '95': 30, 
-            '98': 33, 'me': 36, '2000': 45, 'xp': 60, 'longhorn': 62, 
-            'vista': 65, '7': 70, '8': 78, '8.1': 82, '10': 100, 
-            '11': 106, '12': 112, '13': 124, '14': 140, '15': 200
+            '1.0': 10, '2.0': 20, '3.0': 25, '3.1': 30, '95': 35, 
+            '98': 40, 'me': 45, '2000': 50, 'xp': 55, 'longhorn': 60, 
+            'vista': 65, '7': 70, '8': 75, '8.1': 80, '10': 85, 
+            '11': 90, '12': 95, '13': 100, '14': 105, '15': 110
         };
         let winSize = 50;
         let spawnInterval = 5000; // 5 seconds
@@ -162,6 +181,24 @@
             }
         }
 
+        function resetGame() {
+            if (confirm('ゲームをリセットしますか？')) {
+                coins = 0;
+                frames = Array.from({ length: 12 }).map(() => null);
+                winPrice = 100;
+                discoveredTextures = ['1.0', '2.0'];
+                localStorage.clear();
+                localStorage.setItem('coins', coins);
+                localStorage.setItem('frames', JSON.stringify(frames));
+                localStorage.setItem('winPrice', winPrice);
+                localStorage.setItem('discoveredTextures', JSON.stringify(discoveredTextures));
+                document.getElementById('coins').innerText = `コイン: ${coins}`;
+                document.getElementById('price').innerText = winPrice;
+                updateAvailableWins();
+                drawFrames();
+            }
+        }
+
         function generateCoins() {
             let totalPower = 0;
             frames.forEach(winK => {
@@ -181,15 +218,17 @@
 
         document.getElementById('buyWin').addEventListener('click', buyWinKun);
         document.getElementById('mergeWin').addEventListener('click', promptForMerge);
+        document.getElementById('resetGame').addEventListener('click', resetGame);
 
         // Initialize frames
         drawFrames();
         updateAvailableWins();
-        
-        // Start game loops
+
+        // Spawn Winくん at intervals
         setInterval(spawnWinKun, spawnInterval);
-        setInterval(update, 100); // Update every 100ms
-        setInterval(generateCoins, coinGenerationInterval); // Generate coins every 10 seconds
+
+        // Generate coins at intervals
+        setInterval(update, coinGenerationInterval);
     </script>
 </body>
 </html>
