@@ -38,6 +38,7 @@
         <button id="buyWin">Winくんを購入（価格: <span id="price">100</span> コイン）</button>
         <button id="mergeWin">マージ</button>
         <button id="resetGame">リセット</button>
+        <button id="deleteWin">Winくんを削除</button>
         <div id="coins">コイン: 0</div>
         <div id="shopWin">ショップ: </div>
     </div>
@@ -69,10 +70,10 @@
         let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
         let discoveredTextures = JSON.parse(localStorage.getItem('discoveredTextures')) || ['1.0', '2.0'];
         let winKunsPower = {
-            '1.0': 8, '2.0': 16, '3.0': 24, '3.1': 32, '95': 40, 
-            '98': 48, 'me': 56, '2000': 64, 'xp': 72, 'longhorn': 80, 
-            'vista': 88, '7': 96, '8': 104, '8.1': 112, '10': 120, 
-            '11': 128, '12': 136, '13': 144, '14': 152, '15': 160
+            '1.0': 10, '2.0': 20, '3.0': 30, '3.1': 40, '95': 50, 
+            '98': 60, 'me': 70, '2000': 80, 'xp': 90, 'longhorn': 100, 
+            'vista': 110, '7': 120, '8': 130, '8.1': 140, '10': 150, 
+            '11': 160, '12': 170, '13': 180, '14': 190, '15': 200
         };
         let winSize = 60;
         let spawnInterval = 5000; // 5 seconds
@@ -183,10 +184,22 @@
 
         function promptForMerge() {
             const frameIndex1 = parseInt(prompt('最初のフレーム番号を入力してください (0-11):'));
-            const frameIndex2 = parseInt(prompt('2番目のフレーム番号を入力してください (0-11):'));
+            const frameIndex2 = parseInt(prompt('次のフレーム番号を入力してください (0-11):'));
 
             if (frameIndex1 >= 0 && frameIndex1 < 12 && frameIndex2 >= 0 && frameIndex2 < 12) {
                 mergeWinKuns(frameIndex1, frameIndex2);
+            } else {
+                alert('無効なフレーム番号です。');
+            }
+        }
+
+        function deleteWinKun() {
+            const frameIndex = parseInt(prompt('削除するフレーム番号を入力してください (0-11):'));
+
+            if (frameIndex >= 0 && frameIndex < 12) {
+                frames[frameIndex] = null;
+                localStorage.setItem('frames', JSON.stringify(frames));
+                drawFrames();
             } else {
                 alert('無効なフレーム番号です。');
             }
@@ -199,6 +212,7 @@
 
         document.getElementById('buyWin').addEventListener('click', buyWinKun);
         document.getElementById('mergeWin').addEventListener('click', promptForMerge);
+        document.getElementById('deleteWin').addEventListener('click', deleteWinKun);
         document.getElementById('resetGame').addEventListener('click', resetGame);
 
         function generateCoins() {
