@@ -69,12 +69,12 @@
         let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15'];
         let discoveredTextures = JSON.parse(localStorage.getItem('discoveredTextures')) || ['1.0', '2.0'];
         let winKunsPower = {
-            '1.0': 10, '2.0': 20, '3.0': 25, '3.1': 30, '95': 35, 
-            '98': 40, 'me': 45, '2000': 50, 'xp': 55, 'longhorn': 60, 
-            'vista': 65, '7': 70, '8': 75, '8.1': 80, '10': 85, 
-            '11': 90, '12': 95, '13': 100, '14': 105, '15': 110
+            '1.0': 8, '2.0': 16, '3.0': 24, '3.1': 32, '95': 40, 
+            '98': 48, 'me': 56, '2000': 64, 'xp': 72, 'longhorn': 80, 
+            'vista': 88, '7': 96, '8': 104, '8.1': 112, '10': 120, 
+            '11': 128, '12': 136, '13': 144, '14': 152, '15': 160
         };
-        let winSize = 50;
+        let winSize = 60;
         let spawnInterval = 5000; // 5 seconds
         let coinGenerationInterval = 10000; // 10 seconds
 
@@ -95,7 +95,7 @@
         }
 
         function spawnWinKun() {
-            const texture = winKunsTextures[Math.floor(Math.random() * 2)]; // Only '1.0' and '2.0'
+            const texture = winKunsTextures[0]; // Only '1.0'
             const image = new Image();
             image.src = `images/${texture}.png`;
             image.onload = () => {
@@ -144,9 +144,12 @@
         function mergeWinKuns(frameIndex1, frameIndex2) {
             const winK1 = frames[frameIndex1];
             const winK2 = frames[frameIndex2];
+            const textureIndex1 = winKunsTextures.indexOf(winK1?.texture?.split('/').pop().split('.')[0]);
+            const textureIndex2 = winKunsTextures.indexOf(winK2?.texture?.split('/').pop().split('.')[0]);
+
             if (winK1 && winK2 && winK1.texture === winK2.texture) {
-                const newTextureIndex = Math.min(winKunsTextures.indexOf(winK1.texture) + 1, winKunsTextures.length - 1);
-                const newTexture = winKunsTextures[newTextureIndex];
+                const nextIndex = Math.min(textureIndex1 + 1, winKunsTextures.length - 1);
+                const newTexture = winKunsTextures[nextIndex];
                 const newImage = new Image();
                 newImage.src = `images/${newTexture}.png`;
 
