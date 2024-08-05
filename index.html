@@ -67,19 +67,20 @@
         let coins = parseInt(localStorage.getItem('coins')) || 0;
         let frames = JSON.parse(localStorage.getItem('frames')) || Array.from({ length: 12 }).map(() => null);
         let winPrice = parseInt(localStorage.getItem('winPrice')) || 100;
-        let winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27'];
-        let winKunsPower = {
+        const winKunsTextures = ['1.0', '2.0', '3.0', '3.1', '95', '98', 'me', '2000', 'xp', 'longhorn', 'vista', '7', '8', '8.1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34'];
+        const winKunsPower = {
             '1.0': 10, '2.0': 20, '3.0': 30, '3.1': 40, '95': 50, 
             '98': 60, 'me': 70, '2000': 80, 'xp': 90, 'longhorn': 100, 
             'vista': 110, '7': 120, '8': 130, '8.1': 140, '10': 150, 
             '11': 160, '12': 170, '13': 180, '14': 190, '15': 200,
             '16': 220, '17': 240, '18': 260, '19': 280, '20': 310,
             '21': 340, '22': 380, '23': 430, '24': 480, '25': 520,
-            '26': 600, '27': 700
+            '26': 600, '27': 700, '28': 800, '29': 1000, '30': 1500,
+            '31': 2000, '32': 2500, '33': 3000, '34': 4000
         };
-        let winSize = 60;
-        let spawnInterval = 3000; // 3 seconds for spawning Winくん
-        let coinGenerationInterval = 10000; // 10 seconds for general coin generation
+        const winSize = 60;
+        const spawnInterval = 3000; // 3 seconds for spawning Winくん
+        const coinGenerationInterval = 10000; // 10 seconds for general coin generation
 
         function drawFrames() {
             frames.forEach((winK, index) => {
@@ -175,64 +176,57 @@
                             drawFrames();
                         };
                     } else {
-                        alert('これ以上アップグレードできません。');
+                        alert('これ以上マージできません');
                     }
                 } else {
-                    alert('選択されたWinくんはマージできません。');
+                    alert('異なる Winくん です');
                 }
             } else {
-                alert('選択されたWinくんが存在しません。');
+                alert('Winくん が選択されていません');
             }
         }
 
         function deleteWinKun(frameIndex) {
-            frames[frameIndex] = null;
-            localStorage.setItem('frames', JSON.stringify(frames));
-            drawFrames();
+            if (frames[frameIndex]) {
+                frames[frameIndex] = null;
+                localStorage.setItem('frames', JSON.stringify(frames));
+                drawFrames();
+            }
         }
 
         function resetGame() {
-            if (confirm('本当にゲームをリセットしますか？')) {
-                coins = 0;
-                winPrice = 100;
-                frames = Array.from({ length: 12 }).map(() => null);
-                localStorage.setItem('coins', coins);
-                localStorage.setItem('winPrice', winPrice);
-                localStorage.setItem('frames', JSON.stringify(frames));
-                drawFrames();
-                updateShop();
-            }
+            localStorage.clear();
+            location.reload();
+        }
+
+        function updateCoins() {
+            document.getElementById('coins').innerText = `コイン: ${coins}`;
         }
 
         document.getElementById('buyWin').addEventListener('click', buyWinKun);
         document.getElementById('mergeWin').addEventListener('click', () => {
-            const frameIndex1 = parseInt(prompt('マージする Winくん のFrame Index 1を入力してください (0-11):'));
-            const frameIndex2 = parseInt(prompt('マージする Winくん のFrame Index 2を入力してください (0-11):'));
-            if (!isNaN(frameIndex1) && !isNaN(frameIndex2) && frameIndex1 >= 0 && frameIndex1 < 12 && frameIndex2 >= 0 && frameIndex2 < 12) {
-                mergeWinKuns(frameIndex1, frameIndex2);
-            } else {
-                alert('無効なフレームインデックスです。');
-            }
+            const frameIndex1 = parseInt(prompt('マージする Winくん のフレーム番号を入力してください (例: 0)'));
+            const frameIndex2 = parseInt(prompt('もう一つの Winくん のフレーム番号を入力してください (例: 1)'));
+            mergeWinKuns(frameIndex1, frameIndex2);
         });
         document.getElementById('deleteWin').addEventListener('click', () => {
-            const frameIndex = parseInt(prompt('削除する Winくん のFrame Indexを入力してください (0-11):'));
-            if (!isNaN(frameIndex) && frameIndex >= 0 && frameIndex < 12) {
-                deleteWinKun(frameIndex);
-            } else {
-                alert('無効なフレームインデックスです。');
-            }
+            const frameIndex = parseInt(prompt('削除する Winくん のフレーム番号を入力してください (例: 0)'));
+            deleteWinKun(frameIndex);
         });
         document.getElementById('resetGame').addEventListener('click', resetGame);
 
+        // Initial load
+        drawFrames();
+        updateCoins();
+        updateShop();
+
+        // Periodic functions
         setInterval(spawnWinKun, spawnInterval);
         setInterval(() => {
             coins += 10;
             localStorage.setItem('coins', coins);
-            document.getElementById('coins').innerText = `コイン: ${coins}`;
+            updateCoins();
         }, coinGenerationInterval);
-
-        drawFrames();
-        updateShop();
     </script>
 </body>
 </html>
